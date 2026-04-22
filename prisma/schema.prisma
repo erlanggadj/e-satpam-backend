@@ -1,0 +1,234 @@
+// ==============================================
+// E-Satpam Prisma Schema
+// ==============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── AUTH ─────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(SATPAM)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  SATPAM
+  ADMIN
+  SUPERVISOR
+}
+
+// ─── LEMBAR MUTASI (Master-Detail 2 Level) ───
+
+model Mutasi {
+  id         String           @id @default(uuid())
+  posName    String
+  shiftName  String
+  date       DateTime
+  createdBy  String
+  status     MutasiStatus     @default(ACTIVE)
+  members    MutasiMember[]
+  activities MutasiActivity[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+enum MutasiStatus {
+  ACTIVE
+  SUBMITTED
+}
+
+model MutasiMember {
+  id         String     @id @default(uuid())
+  mutasiId   String
+  mutasi     Mutasi     @relation(fields: [mutasiId], references: [id])
+  guardName  String
+  jabatan    String?
+  attendance Attendance
+}
+
+enum Attendance {
+  HADIR
+  SAKIT
+  IZIN
+}
+
+model MutasiActivity {
+  id          String   @id @default(uuid())
+  mutasiId    String
+  mutasi      Mutasi   @relation(fields: [mutasiId], references: [id])
+  guardName   String
+  time        String
+  description String
+  createdAt   DateTime @default(now())
+}
+
+// ─── LAPORAN KEJADIAN ─────────────────────────
+
+model LaporanKejadian {
+  id           String         @id @default(uuid())
+  nomor        String         @unique
+  perihal      String
+  tempat       String
+  tanggal      String
+  pukul        String
+  korbanNama   String?
+  korbanAlamat String?
+  pelakuNama   String?
+  pelakuAlamat String?
+  saksi1       String?
+  saksi2       String?
+  saksi3       String?
+  saksi4       String?
+  bukti1       String?
+  bukti2       String?
+  bukti3       String?
+  bukti4       String?
+  kronologis   String?        @db.Text
+  kerugian     String?
+  tindakan     String?        @db.Text
+  status       KejadianStatus @default(SUBMITTED)
+  createdBy    String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+enum KejadianStatus {
+  SUBMITTED
+  REVIEWED
+}
+
+// ─── PIKET STAFF ──────────────────────────────
+
+model LaporanPiket {
+  id         String   @id @default(uuid())
+  lokasi     String
+  petugas    String
+  hasil      String
+  keterangan String?  @db.Text
+  createdBy  String
+  createdAt  DateTime @default(now())
+}
+
+// ─── BUKU TAMU ────────────────────────────────
+
+model BukuTamu {
+  id         String   @id @default(uuid())
+  namaTamu   String
+  tujuan     String?
+  pukul      String
+  keterangan String?
+  noTelp     String?
+  createdBy  String
+  createdAt  DateTime @default(now())
+}
+
+// ─── LOG KUNCI ────────────────────────────────
+
+model KeyLog {
+  id                String    @id @default(uuid())
+  keyName           String
+  depositorName     String
+  depositorDivision String?
+  depositTime       DateTime  @default(now())
+  status            KeyStatus @default(DEPOSITED)
+  takerName         String?
+  takerDivision     String?
+  keterangan        String?
+  takeTime          DateTime?
+  createdBy         String
+  updatedAt         DateTime  @updatedAt
+}
+
+enum KeyStatus {
+  DEPOSITED
+  TAKEN
+}
+
+// ─── LOG KONTAINER ────────────────────────────
+
+model ContainerLog {
+  id           String          @id @default(uuid())
+  plateNumber  String
+  driverName   String
+  driverId     String
+  vehicleType  String
+  cargo        String
+  total        String
+  containerIn  String
+  identityNote String?
+  checkInTime  DateTime        @default(now())
+  status       ContainerStatus @default(IN)
+  containerOut String?
+  checkOutTime DateTime?
+  createdBy    String
+  updatedAt    DateTime        @updatedAt
+}
+
+enum ContainerStatus {
+  IN
+  OUT
+}
+
+// ─── LOG AFKIR ────────────────────────────────
+
+model AfkirLog {
+  id           String      @id @default(uuid())
+  plateNumber  String
+  driverName   String
+  driverId     String
+  vehicleType  String
+  itemType     String
+  total        String
+  buyer        String
+  approvedBy   String
+  identityNote String?
+  checkInTime  DateTime    @default(now())
+  status       AfkirStatus @default(IN)
+  checkOutTime DateTime?
+  createdBy    String
+  updatedAt    DateTime    @updatedAt
+}
+
+enum AfkirStatus {
+  IN
+  OUT
+}
+
+// ─── IZIN STAFF ───────────────────────────────
+
+model IzinStaff {
+  id          String     @id @default(uuid())
+  name        String
+  department  String
+  reasonType  ReasonType
+  destination String
+  note        String?
+  timeOut     DateTime   @default(now())
+  timeIn      DateTime?
+  status      IzinStatus @default(OUT)
+  createdBy   String
+  updatedAt   DateTime   @updatedAt
+}
+
+enum IzinStatus {
+  OUT
+  RETURNED
+}
+
+enum ReasonType {
+  KERJA
+  PRIBADI
+}
