@@ -20,6 +20,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(SATPAM)
+  jabatan   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -48,6 +49,7 @@ model Mutasi {
 enum MutasiStatus {
   ACTIVE
   SUBMITTED
+  APPROVED
 }
 
 model MutasiMember {
@@ -108,6 +110,7 @@ model LaporanKejadian {
 enum KejadianStatus {
   SUBMITTED
   REVIEWED
+  APPROVED
 }
 
 // ─── PIKET STAFF ──────────────────────────────
@@ -118,8 +121,14 @@ model LaporanPiket {
   petugas    String
   hasil      String
   keterangan String?  @db.Text
+  status     PiketStatus @default(SUBMITTED)
   createdBy  String
   createdAt  DateTime @default(now())
+}
+
+enum PiketStatus {
+  SUBMITTED
+  APPROVED
 }
 
 // ─── BUKU TAMU ────────────────────────────────
@@ -131,8 +140,14 @@ model BukuTamu {
   pukul      String
   keterangan String?
   noTelp     String?
+  status     TamuStatus @default(SUBMITTED)
   createdBy  String
   createdAt  DateTime @default(now())
+}
+
+enum TamuStatus {
+  SUBMITTED
+  APPROVED
 }
 
 // ─── LOG KUNCI ────────────────────────────────
@@ -155,6 +170,7 @@ model KeyLog {
 enum KeyStatus {
   DEPOSITED
   TAKEN
+  APPROVED
 }
 
 // ─── LOG KONTAINER ────────────────────────────
@@ -180,6 +196,7 @@ model ContainerLog {
 enum ContainerStatus {
   IN
   OUT
+  APPROVED
 }
 
 // ─── LOG AFKIR ────────────────────────────────
@@ -205,6 +222,7 @@ model AfkirLog {
 enum AfkirStatus {
   IN
   OUT
+  APPROVED
 }
 
 // ─── IZIN STAFF ───────────────────────────────
@@ -226,6 +244,7 @@ model IzinStaff {
 enum IzinStatus {
   OUT
   RETURNED
+  APPROVED
 }
 
 enum ReasonType {
