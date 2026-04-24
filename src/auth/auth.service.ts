@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -23,7 +23,7 @@ export class AuthService {
         if (!isMatch) {
             throw new UnauthorizedException('Email atau password salah');
         }
-        const payload = { sub: user.id, email: user.email, role: user.role };
+        const payload = { sub: user.id, email: user.email, role: user.role, jabatan: user.jabatan };
         return {
             access_token: this.jwtService.sign(payload),
             user: {
@@ -31,6 +31,7 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                jabatan: user.jabatan,
             },
         };
     }
@@ -49,6 +50,7 @@ export class AuthService {
                 email: dto.email,
                 password: hashed,
                 role: dto.role,
+                jabatan: dto.jabatan,
             },
         });
         const { password: _, ...result } = user;

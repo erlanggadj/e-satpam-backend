@@ -251,3 +251,18 @@ enum ReasonType {
   KERJA
   PRIBADI
 }
+
+// ─── ACTIVITY LOG (HISTORY TABLE) ─────────────
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  module      String   // 'mutasi', 'kejadian', 'piket', 'tamu', 'keylog', 'container', 'afkir', 'izin'
+  recordId    String   // ID asli di tabel modulnya
+  title       String   // Judul tampilan
+  status      String?  // Redundansi status untuk performa query history
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([module])
+}
