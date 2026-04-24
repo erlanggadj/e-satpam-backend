@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { HistoryService } from './history.service.js';
 
 @ApiTags('History')
@@ -28,5 +28,13 @@ export class HistoryController {
             page: page ? parseInt(page, 10) : undefined,
             limit: limit ? parseInt(limit, 10) : undefined,
         });
+    }
+
+    @Patch(':moduleType/:id/approve')
+    approve(
+        @Param('moduleType') moduleType: string,
+        @Param('id') id: string,
+    ) {
+        return this.historyService.approve(moduleType, id);
     }
 }

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { SyncBatchDto } from './dto/sync-batch.dto.js';
 
@@ -40,18 +40,76 @@ export class SyncService {
         const data: Record<string, unknown> = { ...rest, createdBy: userId };
 
         switch (module) {
-            case 'mutasi':
+            case 'mutasi': {
+                const { members, activities, ...mutasiData } = data as any;
                 return this.prisma.mutasi.upsert({
                     where: { id },
-                    create: { id, ...data, date: new Date(data['date'] as string) } as any,
-                    update: data as any,
+                    create: {
+                        id,
+                        posName: mutasiData.posName,
+                        shiftName: mutasiData.shiftName,
+                        date: new Date(mutasiData.date),
+                        createdBy: mutasiData.createdBy,
+                        status: mutasiData.status,
+                        members: members && members.length > 0 ? {
+                            create: members.map((m: any) => ({
+                                id: m.id,
+                                guardName: m.guardName,
+                                attendance: m.attendance
+                            }))
+                        } : undefined,
+                        activities: activities && activities.length > 0 ? {
+                            create: activities.map((a: any) => ({
+                                id: a.id,
+                                time: a.time,
+                                description: a.description,
+                                guardName: a.guardName,
+                                isSynced: true
+                            }))
+                        } : undefined
+                    },
+                    update: {
+                        posName: mutasiData.posName,
+                        shiftName: mutasiData.shiftName,
+                        date: new Date(mutasiData.date),
+                        status: mutasiData.status,
+                    },
                 });
-            case 'kejadian':
+            }
+            case 'kejadian': {
+                // Mobile stores data with snake_case; Prisma model expects camelCase
+                const {
+                    sync_status: _ks, // strip mobile-only field
+                    korban_nama, korban_alamat, pelaku_nama, pelaku_alamat,
+                    saksi_1, saksi_2, saksi_3, saksi_4,
+                    bukti_1, bukti_2, bukti_3, bukti_4,
+                    ...kejadianRest
+                } = data as any;
+
+                const kejadianData = {
+                    ...kejadianRest,
+                    createdBy: userId,
+                    korbanNama: korban_nama ?? kejadianRest.korbanNama,
+                    korbanAlamat: korban_alamat ?? kejadianRest.korbanAlamat,
+                    pelakuNama: pelaku_nama ?? kejadianRest.pelakuNama,
+                    pelakuAlamat: pelaku_alamat ?? kejadianRest.pelakuAlamat,
+                    saksi1: saksi_1 ?? kejadianRest.saksi1,
+                    saksi2: saksi_2 ?? kejadianRest.saksi2,
+                    saksi3: saksi_3 ?? kejadianRest.saksi3,
+                    saksi4: saksi_4 ?? kejadianRest.saksi4,
+                    bukti1: bukti_1 ?? kejadianRest.bukti1,
+                    bukti2: bukti_2 ?? kejadianRest.bukti2,
+                    bukti3: bukti_3 ?? kejadianRest.bukti3,
+                    bukti4: bukti_4 ?? kejadianRest.bukti4,
+                };
+
                 return this.prisma.laporanKejadian.upsert({
                     where: { id },
-                    create: { id, ...data } as any,
-                    update: data as any,
+                    create: { id, ...kejadianData } as any,
+                    update: kejadianData as any,
                 });
+            }
+
             case 'piket':
                 return this.prisma.laporanPiket.upsert({
                     where: { id },

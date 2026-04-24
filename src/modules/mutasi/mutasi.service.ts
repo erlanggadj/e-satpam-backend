@@ -1,22 +1,42 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { CreateMutasiDto } from './dto/create-mutasi.dto.js';
-import { CreateMutasiMemberDto } from './dto/create-mutasi-member.dto.js';
-import { CreateMutasiActivityDto } from './dto/create-mutasi-activity.dto.js';
 import { buildDateFilter } from '../../common/helpers/date.helper.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { CreateMutasiActivityDto } from './dto/create-mutasi-activity.dto.js';
+import { CreateMutasiMemberDto } from './dto/create-mutasi-member.dto.js';
+import { CreateMutasiDto } from './dto/create-mutasi.dto.js';
 
 @Injectable()
 export class MutasiService {
     constructor(private prisma: PrismaService) { }
 
     async findAll(history: boolean) {
-        const where = buildDateFilter(history);
+        if (!history) {
+            // Mode Satpam: Hanya data hari ini (Dashboard)
+            return this.prisma.mutasi.findMany({
+                where: buildDateFilter(false, 'date'),
+                include: { members: true, activities: true },
+                orderBy: { createdAt: 'desc' },
+            });
+        }
+
+        // Mode Management: Semua History (SUBMITTED/APPROVED) + Monitoring AKTIF HARI INI
         return this.prisma.mutasi.findMany({
-            where,
+            where: {
+                OR: [
+                    { status: { in: ['SUBMITTED', 'APPROVED'] } },
+                    {
+                        AND: [
+                            { status: 'ACTIVE' },
+                            buildDateFilter(false, 'date')
+                        ]
+                    }
+                ]
+            },
             include: { members: true, activities: true },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { date: 'desc' },
         });
     }
+
 
     async findOne(id: string) {
         const mutasi = await this.prisma.mutasi.findUnique({
